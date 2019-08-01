@@ -21,6 +21,7 @@ type updateData struct {
 	Limit             string
 	Offset            string
 	Suffixes          exprs
+	Joins             []Sqlizer
 }
 
 type setClause struct {
@@ -72,6 +73,14 @@ func (d *updateData) ToSql() (sqlStr string, args []interface{}, err error) {
 
 	sql.WriteString("UPDATE ")
 	sql.WriteString(d.Table)
+
+	if len(d.Joins) > 0 {
+		sql.WriteString(" ")
+		args, err = appendToSql(d.Joins, sql, " ", args)
+		if err != nil {
+			return
+		}
+	}
 
 	sql.WriteString(" SET ")
 	setSqls := make([]string, len(d.SetClauses))
@@ -229,4 +238,14 @@ func (b UpdateBuilder) Offset(offset uint64) UpdateBuilder {
 // Suffix adds an expression to the end of the query
 func (b UpdateBuilder) Suffix(sql string, args ...interface{}) UpdateBuilder {
 	return builder.Append(b, "Suffixes", Expr(sql, args...)).(UpdateBuilder)
+}
+
+// JoinClause adds a join clause to the query.
+func (b UpdateBuilder) JoinClause(pred interface{}, args ...interface{}) UpdateBuilder {
+	return builder.Append(b, "Joins", newPart(pred, args...)).(UpdateBuilder)
+}
+
+// Join adds a JOIN clause to the query.
+func (b UpdateBuilder) Join(join string, rest ...interface{}) UpdateBuilder {
+	return b.JoinClause("JOIN "+join, rest...)
 }
