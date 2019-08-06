@@ -59,11 +59,6 @@ func (d *updateData) ToSql() (sqlStr string, args []interface{}, err error) {
 		err = fmt.Errorf("update statements must specify a table")
 		return
 	}
-	if len(d.SetClauses) == 0 {
-		err = fmt.Errorf("update statements must have at least one Set clause")
-		return
-	}
-
 	sql := &bytes.Buffer{}
 
 	if len(d.Prefixes) > 0 {
@@ -82,7 +77,10 @@ func (d *updateData) ToSql() (sqlStr string, args []interface{}, err error) {
 		}
 	}
 
-	sql.WriteString(" SET ")
+	if len(d.SetClauses) > 0 {
+		sql.WriteString(" SET ")
+	}
+
 	setSqls := make([]string, len(d.SetClauses))
 	for i, setClause := range d.SetClauses {
 		var valSql string
